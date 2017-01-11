@@ -4,22 +4,25 @@ import java.util.*;
  * Created by Andrey Petrov on 17-01-10.
  */
 public class CrosswordGenerator {
-    //public static String[] words = {"the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
+    /*public static String[] words = {"the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
 
-    //public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming"};
+    /*public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming"};
 
+*/
+    public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
+            "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
 
-    //public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
-//                                    "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
-//                                    "keep", "going", "until", "you", "become", "completely", "numb", "and", "then", "some", "more","it","is","never","enough"};
-   /* public static String[] words = {"ttttttttttto", "hello", "world", "task", "korea",
+/*    public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
+                                    "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
+                                    "keep", "going", "until", "you", "become", "completely", "numb", "and", "then", "some", "more","it","is","never","enough"};
+    /*public static String[] words = {"ttttttttttto", "hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough"};
 */
-    public static String[] words = {"hello", "world", "task", "korea",
+  /*  public static String[] words = {"hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough"};
-
+*/
     public static Map<Character, Set<String>> letterCounts;
     public static Map<String, Set<String>> neighbours;
     public static char[][] bestBoard;
@@ -31,8 +34,8 @@ public class CrosswordGenerator {
     public static long startTimeTotal = 0;
     public static long startTimePerBoard = 0;
 
-    public static final long TIME_LIMIT_IN_SECONDS_TOTAL = 10 * 1000;
-    public static final long TIME_LIMIT_IN_SECONDS_PER_BOARD = 10 * 1000;
+    public static final long TIME_LIMIT_IN_SECONDS_TOTAL = 15 * 1000;
+    public static final long TIME_LIMIT_IN_SECONDS_PER_BOARD = 15 * 1000;
     public static final int BOARD_SIZE = 50;
     public static long generateNextBoardInvocationsCount = 0;
     public static final Direction initialDirection = Direction.HORIZONTAL;
@@ -221,22 +224,22 @@ public class CrosswordGenerator {
                                             board);
 
                                     if (candidateBoardScore >= 0) {
-                                        char[][] newBoard = copyBoard(board);
+                                        char[][] newBoard = board;
                                         writeWordToBoard(candidateWord, candidateX, candidateY, candidateDirection, newBoard);
                                         int newBoardWordSize = boardWordSize + 1;
                                         int newBoardScore = boardScore + candidateBoardScore;
                                         if (newBoardWordSize > bestBoardWordSize) {
                                             bestBoardWordSize = newBoardWordSize;
                                             bestBoardScore = newBoardScore;
-                                            bestBoard = newBoard;
+                                            bestBoard = copyBoard(newBoard); //copy successful boards to keep, as we are overwriting the board in our backtracking
                                             bestBoards = new ArrayList<char[][]>();
-                                            bestBoards.add(newBoard);
+                                            bestBoards.add(bestBoard);
                                             if (bestBoardWordSize == words.length) return; //this is a global maximum
                                         } else if (newBoardWordSize == bestBoardWordSize) {
                                             bestBoards.add(newBoard);
                                             if (newBoardScore > bestBoardScore) {
                                                 bestBoardScore = newBoardScore;
-                                                bestBoard = newBoard;
+                                                bestBoard = copyBoard(newBoard);
                                             }
                                         }
 
@@ -253,7 +256,6 @@ public class CrosswordGenerator {
 
                                         //Drill down into all possible already added words
                                         for (String used : usedWordsCopy) {
-
                                             //remove the candidate, we don't want to use it anymore when going deeper.
                                             //TODO instead of copying boards, add here writing and unwriting of the words in the same board
 
@@ -265,10 +267,13 @@ public class CrosswordGenerator {
 
                                             //add back the candidate to use for future cases
                                         }
+
+
+                                        //reset the board and everything when backtracking.
+                                        unwriteWordFromBoard(candidateWord, candidateX, candidateY, candidateDirection, newBoard);
                                         neighbours.get(previousWord).add(candidateWord);
                                         unusedWordsCopy.add(candidateWord);
 
-                                        //reset the candidate after we are done with it. is this really needed?
                                         xUsedWords.remove(candidateWord);
                                         yUsedWords.remove(candidateWord);
                                         directionUsedWords.remove(candidateWord);
@@ -310,6 +315,27 @@ public class CrosswordGenerator {
         //print(board);
     }
 
+    public static void unwriteWordFromBoard(String word, int x, int y, Direction direction, char[][] board) {
+        if (direction == Direction.VERTICAL) {
+            for (int i = 0; i < word.length(); i++) {
+                int newX = x+i;
+                if (hasEmptyNeighbours(newX, y, direction, board)) {
+                    board[newX][y] = '_';
+                }
+            }
+        } else {
+            for (int i = 0; i < word.length(); i++) {
+                int newY = y+i;
+                if (hasEmptyNeighbours(x, newY, direction, board)) {
+                    board[x][newY] = '_';
+                }
+            }
+        }
+
+        //print(board);
+    }
+
+
     /**
      * Check whether a word can be written at starting coordinates x and y in the given direction
      *
@@ -350,7 +376,7 @@ public class CrosswordGenerator {
                 int target = board[currentX][y];
 
                 if (target == '_') { //empty, so good candidate if it has valid neighbours
-                    if (!hasValidNeighbours(currentX, y, direction, board, word, currentLetter)) return -1;
+                    if (!hasEmptyNeighbours(currentX, y, direction, board)) return -1;
                 } else if (target != currentLetter) {
                     return -1;//letter is not matching
                 } else {// target == current
@@ -372,7 +398,7 @@ public class CrosswordGenerator {
                 char currentLetter = word.charAt(i);
                 int target = board[x][currentY];
                 if (target == '_') { //empty, so good candidate if it has valid neighbours
-                    if (!hasValidNeighbours(x, currentY, direction, board, word, currentLetter)) return -1;
+                    if (!hasEmptyNeighbours(x, currentY, direction, board)) return -1;
                 } else if (target != word.charAt(i)) {
                     return -1;//letter is not matching
                 } else {
@@ -385,9 +411,7 @@ public class CrosswordGenerator {
     }
 
     /**
-     * Check whether the neighbours are valid. A crossing of another word with opposite direction is ok, but touching another word with the same direction is not
-     * because words with same direction will have more than one touching letter as they are of min length 2.
-     * that means we should never have the situation of 4 letters touching in a square
+     * Check whether the neighbours are valid. Touching another word should not happen.
      *
      * @param x
      * @param y
@@ -395,7 +419,7 @@ public class CrosswordGenerator {
      * @return
      */
 
-    private static boolean hasValidNeighbours(int x, int y, Direction direction, char[][] board, String word, char currentLetter) {
+    private static boolean hasEmptyNeighbours(int x, int y, Direction direction, char[][] board) {
         if (direction == Direction.HORIZONTAL) {
             //if element on top is occupied, means we are touching another word
             if (x - 1 > 0 && board[x - 1][y] != '_') return false;
