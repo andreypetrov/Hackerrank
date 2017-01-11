@@ -11,20 +11,21 @@ public class CrosswordGenerator {
 */
   /*  public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
-
-/*    public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
+*/
+   public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
                                     "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
                                     "keep", "going", "until", "you", "become", "completely", "numb", "and", "then", "some", "more","it","is","never","enough"};
+
     /*public static String[] words = {"ttttttttttto", "hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough"};
 */
-    public static String[] words = {"hello", "world", "task", "korea",
+   /* public static String[] words = {"hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough",
             "ta", "tb", "tc", "td", "te", "tf", "tg", "th", "ti", "tj", "tk", "tl", "tm", "tn",
             "to", "tp"};
-
+*/
     public static Map<Character, Set<String>> letterCounts;
     public static Map<String, Set<String>> neighbours;
     public static char[][] bestBoard;
@@ -191,8 +192,8 @@ public class CrosswordGenerator {
         if (bestBoardWordSize == words.length) return; //this is a global maximum so stop searching for better solutions (here better means with more words, not with more crossings)
 
 
-        Set<String> unusedWordsCopy = new HashSet<String>();
-        unusedWordsCopy.addAll(unusedWords);
+        //Set<String> unusedWordsCopy = new HashSet<String>();
+        //unusedWordsCopy.addAll(unusedWords);
 
 
         //for (String previousWord : usedWords) {
@@ -200,7 +201,7 @@ public class CrosswordGenerator {
             previousWordNeighbours.addAll(neighbours.get(previousWord));
             //Iterator<String> iterator = neighbours.get(previousWord).iterator();
             for (String candidateWord : previousWordNeighbours) { //iterate first by candidate words
-                if (unusedWordsCopy.contains(candidateWord)) {
+                if (unusedWords.contains(candidateWord)) {
                     for (int i = 0; i < previousWord.length(); i++) { //iterate over previous word letters and check which letter the two words can be crossed on
                         char crossLetter = previousWord.charAt(i);
                         if (letterCounts.get(crossLetter).contains(candidateWord)) { //found a matching letter between the two words.
@@ -254,7 +255,7 @@ public class CrosswordGenerator {
                                         directionUsedWords.put(candidateWord, candidateDirection);
 
                                         neighbours.get(previousWord).remove(candidateWord);
-                                        unusedWordsCopy.remove(candidateWord);
+                                        unusedWords.remove(candidateWord);
 
                                         //Drill down into all possible already added words
                                         for (String used : usedWordsCopy) {
@@ -265,7 +266,7 @@ public class CrosswordGenerator {
                                             Direction nextDirection = opposite(directionUsedWords.get(used));
                                             int nextX = xUsedWords.get(used);
                                             int nextY = yUsedWords.get(used);
-                                            generateNextBoard(used, nextX, nextY, usedWordsCopy, unusedWordsCopy, nextDirection, newBoard, newBoardWordSize, newBoardScore, xUsedWords, yUsedWords, directionUsedWords); //after going deep add the word back in
+                                            generateNextBoard(used, nextX, nextY, usedWordsCopy, unusedWords, nextDirection, newBoard, newBoardWordSize, newBoardScore, xUsedWords, yUsedWords, directionUsedWords); //after going deep add the word back in
 
                                             //add back the candidate to use for future cases
                                         }
@@ -274,7 +275,7 @@ public class CrosswordGenerator {
                                         //reset the board and everything when backtracking.
                                         unwriteWordFromBoard(candidateWord, candidateX, candidateY, candidateDirection, newBoard);
                                         neighbours.get(previousWord).add(candidateWord);
-                                        unusedWordsCopy.add(candidateWord);
+                                        unusedWords.add(candidateWord);
 
                                         xUsedWords.remove(candidateWord);
                                         yUsedWords.remove(candidateWord);
