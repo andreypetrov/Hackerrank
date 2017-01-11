@@ -4,32 +4,44 @@ import java.util.*;
  * Created by Andrey Petrov on 17-01-10.
  */
 public class CrosswordGenerator {
-    public static String[] words = {"the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
+    //public static String[] words = {"the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
+
+    //public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming"};
+
+
+    //public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
+          //                          "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
+           //                         "keep", "going", "until", "you", "become", "completely", "numb", "and", "then", "some", "more","it","is","never","enough"};
+
+    public static String[] words = {"hello", "world", "task", "korea",
+            "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
+            "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough"};
+
     public static Map<Character, Set<String>> letterCounts;
     public static Map<String, Set<String>> neighbours;
     public static char[][] bestBoard;
-
     public static List<char[][]> bestBoards;
 
     public static int bestBoardWordSize = 0;
     public static long startTime = 0;
-    public static final long TIME_LIMIT_IN_SECONDS = 10 * 1000;
+    public static final long TIME_LIMIT_IN_SECONDS = 3 * 1000;
     public static final int BOARD_SIZE = 100;
     public static long generateNextBoardInvocationsCount = 0;
+    public static final Direction initialDirection = Direction.HORIZONTAL;
 
     public static enum Direction {
         HORIZONTAL,
         VERTICAL
     }
 
-    public static class Word {
+    /*public static class Word {
         public int x;
         public int y;
         public Direction direction;
         public String word;
         public Set<String> neighbours;
 
-    }
+    }*/
 
 
 
@@ -49,9 +61,9 @@ public class CrosswordGenerator {
 
         //print(neighbours);
 
-        List<Word> wordsList = generateWordsList(words, neighbours);
-        Collections.sort(wordsList, new WordNeighboursAndLengthDescendingComparator());
-        print(wordsList);
+    //    List<Word> wordsList = generateWordsList(words, neighbours);
+    //    Collections.sort(wordsList, new WordNeighboursAndLengthDescendingComparator());
+    //    print(wordsList);
 
 
         int firstWordX = BOARD_SIZE / 2;
@@ -68,26 +80,35 @@ public class CrosswordGenerator {
         Set<String> usedWords = new HashSet<String>();
 
 
-        startTime = System.currentTimeMillis();
 
         //starting word shouldn't matter as long as the grid is big enough
         String word = words[0];
         unusedWords.remove(word);
         usedWords.add(word);
-        Map<String, Integer> usedWordsX = new HashMap<String, Integer>();
-        Map<String, Integer> usedWordsY = new HashMap<String, Integer>();
+        Map<String, Integer> xUsedWords = new HashMap<String, Integer>();
+        Map<String, Integer> yUsedWords = new HashMap<String, Integer>();
+        Map<String, Direction> directionUsedWords = new HashMap<String, Direction>();
 
-        usedWordsX.put(word, firstWordX);
-        usedWordsY.put(word, firstWordY);
+        xUsedWords.put(word, firstWordX);
+        yUsedWords.put(word, firstWordY);
+        directionUsedWords.put(word, initialDirection);
 
         bestBoards.add(board);
-        writeWordToBoard(word, firstWordX, firstWordY, Direction.HORIZONTAL, board);
-        generateNextBoard(word, firstWordX, firstWordY, usedWords, unusedWords, Direction.VERTICAL, board, 1, usedWordsX, usedWordsY);
+        writeWordToBoard(word, firstWordX, firstWordY, initialDirection, board);
 
+        startTime = System.currentTimeMillis();
 
-        for (char[][] aBestBoard : bestBoards) {
-            print(aBestBoard);
-        }
+        generateNextBoard(word, firstWordX, firstWordY, usedWords, unusedWords, opposite(initialDirection), board, 1, xUsedWords, yUsedWords, directionUsedWords);
+
+        printMinimalBoard(bestBoards.get(0));
+
+        /*for (char[][] aBestBoard : bestBoards) {
+            printMinimalBoard(aBestBoard);
+        }*/
+
+        long endTime = System.currentTimeMillis();
+        long duration = (endTime - startTime)/1000;
+        System.out.println("Time taken: " + duration + " seconds");
 
         System.out.println("end");
         System.out.println("generateNextBoardInvocationsCount: " + generateNextBoardInvocationsCount);
@@ -133,19 +154,27 @@ public class CrosswordGenerator {
                                          char[][] board,
                                          int boardWordSize,
                                          Map<String, Integer> xUsedWords,
-                                         Map<String, Integer> yUsedWords) {
+                                         Map<String, Integer> yUsedWords,
+                                         Map<String, Direction> directionUsedWords) {
 
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - startTime >= TIME_LIMIT_IN_SECONDS) return; //kill execution if time limit is reached
         generateNextBoardInvocationsCount++;
         if (unusedWords.size() == 0) return; //bottom of recursion
         if (unusedWords.size() + boardWordSize <= bestBoardWordSize) return; //we will not find a better solution down this path
         if (bestBoardWordSize == words.length) return; //this is a global maximum
+
+
+        Set<String> unusedWordsCopy = new HashSet<String>();
+        unusedWordsCopy.addAll(unusedWords);
+
 
         //for (String previousWord : usedWords) {
             Set<String> previousWordNeighbours = new HashSet<String>();
             previousWordNeighbours.addAll(neighbours.get(previousWord));
             //Iterator<String> iterator = neighbours.get(previousWord).iterator();
             for (String candidateWord : previousWordNeighbours) { //iterate first by candidate words
-                if (unusedWords.contains(candidateWord)) {
+                if (unusedWordsCopy.contains(candidateWord)) {
                     for (int i = 0; i < previousWord.length(); i++) { //iterate over previous word letters and check which letter the two words can be crossed on
                         char crossLetter = previousWord.charAt(i);
                         if (letterCounts.get(crossLetter).contains(candidateWord)) { //found a matching letter between the two words.
@@ -183,19 +212,39 @@ public class CrosswordGenerator {
                                             bestBoards.add(newBoard);
                                         }
 
-                                        //remove the candidate, we don't want to use it anymore when going deeper.
-                                        //TODO instead of copying boards, add here writing and unwriting of the words in the same board
+                                        Set<String> usedWordsCopy = new HashSet<String>();
+                                        usedWordsCopy.addAll(usedWords);
+
+                                        usedWordsCopy.add(candidateWord);
+                                        xUsedWords.put(candidateWord, candidateX);
+                                        yUsedWords.put(candidateWord, candidateY);
+                                        directionUsedWords.put(candidateWord, candidateDirection);
+
                                         neighbours.get(previousWord).remove(candidateWord);
-                                        unusedWords.remove(candidateWord);
+                                        unusedWordsCopy.remove(candidateWord);
 
-                                        Direction nextDirection = opposite(candidateDirection);
+                                        //Drill down into all possible already added words
+                                        for (String used : usedWordsCopy) {
 
-                                        usedWords.add(candidateWord);
-                                        generateNextBoard(candidateWord, candidateX, candidateY, usedWords, unusedWords, nextDirection, newBoard, newBoardWordSize, xUsedWords, yUsedWords); //after going deep add the word back in
+                                            //remove the candidate, we don't want to use it anymore when going deeper.
+                                            //TODO instead of copying boards, add here writing and unwriting of the words in the same board
 
-                                        //add back the candidate to use for future cases
+
+                                            Direction nextDirection = opposite(directionUsedWords.get(used));
+                                            int nextX = xUsedWords.get(used);
+                                            int nextY = yUsedWords.get(used);
+                                            generateNextBoard(used, nextX, nextY, usedWordsCopy, unusedWordsCopy, nextDirection, newBoard, newBoardWordSize, xUsedWords, yUsedWords, directionUsedWords); //after going deep add the word back in
+
+                                            //add back the candidate to use for future cases
+                                        }
                                         neighbours.get(previousWord).add(candidateWord);
-                                        unusedWords.add(candidateWord);
+                                        unusedWordsCopy.add(candidateWord);
+
+                                        //reset the candidate after we are done with it. is this really needed?
+                                        xUsedWords.remove(candidateWord);
+                                        yUsedWords.remove(candidateWord);
+                                        directionUsedWords.remove(candidateWord);
+
                                     }
 
                                 }
@@ -330,15 +379,6 @@ public class CrosswordGenerator {
         return true;
     }
 
-
-    private static void print(List<Word> wordsList) {
-        for (Word word : wordsList) {
-            System.out.print(word.word + ": ");
-            print(word.neighbours);
-        }
-        System.out.println();
-    }
-
     private static void print(Set<String> neighbours) {
         for (String neighbour : neighbours) {
             System.out.print(neighbour + ", ");
@@ -346,7 +386,16 @@ public class CrosswordGenerator {
         System.out.println();
     }
 
-    private static List<Word> generateWordsList(String[] words, Map<String, Set<String>> neighbours) {
+    /*private static void print(List<Word> wordsList) {
+        for (Word word : wordsList) {
+            System.out.print(word.word + ": ");
+            print(word.neighbours);
+        }
+        System.out.println();
+    }*/
+
+
+    /*private static List<Word> generateWordsList(String[] words, Map<String, Set<String>> neighbours) {
         List<Word> result = new ArrayList<Word>();
         for (String wordString : words) {
             Word word = new Word();
@@ -355,7 +404,7 @@ public class CrosswordGenerator {
             result.add(word);
         }
         return result;
-    }
+    }*/
 
     public static Map<String, Set<String>> findNeighbours(Map<Character, Set<String>> letterCounts, String[] words) {
 
@@ -431,7 +480,32 @@ public class CrosswordGenerator {
     }
 
 
-    public static void print(char[][] board) {
+    public static void printMinimalBoard(char[][] board) {
+        int startX = BOARD_SIZE;
+        int startY = BOARD_SIZE;
+        int endX = 0;
+        int endY = 0;
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                if (board[i][j]!='_') {
+                    startX = Math.min(startX, i);
+                    startY = Math.min(startY, j);
+                    endX = Math.max(endX, i);
+                    endY = Math.max(endY, j);
+                }
+            }
+        }
+
+        System.out.println("Board:");
+        for (int i = startX; i <= endX ; i++) {
+            for (int j = startY; j <= endY; j++) {
+                System.out.print(board[i][j] + " ");
+            }
+            System.out.println();
+        }
+    }
+
+    public static void printBoard(char[][] board) {
         System.out.println("Board:");
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[i].length; j++) {
@@ -449,7 +523,7 @@ public class CrosswordGenerator {
     }
 
 
-    public static class WordNeighboursAndLengthDescendingComparator implements java.util.Comparator<Word> {
+    /*public static class WordNeighboursAndLengthDescendingComparator implements java.util.Comparator<Word> {
         public int compare(Word w1, Word w2) { //sort first by neighbours, next by length
             int neighboursDistance = w2.neighbours.size() - w1.neighbours.size();
             if (neighboursDistance != 0) {
@@ -457,7 +531,7 @@ public class CrosswordGenerator {
             }
             return w2.word.length() - w1.word.length();
         }
-    }
+    }*/
 
     public static String[] removeWordsWithoutNeighbours(String[] words, Map<String, Set<String>> neighbours) {
         Set<String> wordsWithNeighbours = new HashSet<String>();
