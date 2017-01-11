@@ -9,7 +9,7 @@ public class CrosswordGenerator {
     /*public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming"};
 
 */
-    public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
+  /*  public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
 
 /*    public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
@@ -19,10 +19,12 @@ public class CrosswordGenerator {
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough"};
 */
-  /*  public static String[] words = {"hello", "world", "task", "korea",
+    public static String[] words = {"hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
-            "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough"};
-*/
+            "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough",
+            "ta", "tb", "tc", "td", "te", "tf", "tg", "th", "ti", "tj", "tk", "tl", "tm", "tn",
+            "to", "tp"};
+
     public static Map<Character, Set<String>> letterCounts;
     public static Map<String, Set<String>> neighbours;
     public static char[][] bestBoard;
