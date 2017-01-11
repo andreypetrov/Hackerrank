@@ -4,7 +4,7 @@ import java.util.*;
  * Created by Andrey Petrov on 17-01-10.
  */
 public class CrosswordGenerator {
-    public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming"};
+    public static String[] words = {"the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
     public static Map<Character, Set<String>> letterCounts;
     public static Map<String, Set<String>> neighbours;
     public static char[][] bestBoard;
@@ -14,7 +14,7 @@ public class CrosswordGenerator {
     public static int bestBoardWordSize = 0;
     public static long startTime = 0;
     public static final long TIME_LIMIT_IN_SECONDS = 10 * 1000;
-    public static final int BOARD_SIZE = 50;
+    public static final int BOARD_SIZE = 100;
     public static long generateNextBoardInvocationsCount = 0;
 
     public static enum Direction {
@@ -31,15 +31,22 @@ public class CrosswordGenerator {
 
     }
 
+
+
+
     //assuming no word repetitions
     //create several crosswords and choose the best. best means with max words from the original list
     public static void generateCrossword() {
-        print(words);
         Arrays.sort(words, new StringLengthDescendingComparator());
-
+        print(words);
         letterCounts = countLetters(words);
-        printLetterCounts(letterCounts);
         neighbours = findNeighbours(letterCounts, words);
+        words = removeWordsWithoutNeighbours(words, neighbours);
+        Arrays.sort(words, new StringLengthDescendingComparator());
+        print(words);
+        printLetterCounts(letterCounts);
+
+
         //print(neighbours);
 
         List<Word> wordsList = generateWordsList(words, neighbours);
@@ -131,6 +138,8 @@ public class CrosswordGenerator {
         generateNextBoardInvocationsCount++;
         if (unusedWords.size() == 0) return; //bottom of recursion
         if (unusedWords.size() + boardWordSize <= bestBoardWordSize) return; //we will not find a better solution down this path
+        if (bestBoardWordSize == words.length) return; //this is a global maximum
+
         //for (String previousWord : usedWords) {
             Set<String> previousWordNeighbours = new HashSet<String>();
             previousWordNeighbours.addAll(neighbours.get(previousWord));
@@ -251,7 +260,7 @@ public class CrosswordGenerator {
 
 
             //check whether the element before first letter and element after last letter are free. Words should not touch others
-            if (x + wordLength <= board.length && board[x + wordLength][y] != '_') return false;
+            if (x + wordLength < board.length && board[x + wordLength][y] != '_') return false;
             if (x - 1 > 0 && board[x - 1][y] != '_') return false;
 
 
@@ -274,7 +283,7 @@ public class CrosswordGenerator {
             if (y + wordLength > board[0].length) return false; //no space to put in the word
 
             //check whether the element before first letter and element after last letter are free. Words should not touch others
-            if (y + wordLength <= board[0].length && board[x][y + wordLength] != '_') return false;
+            if (y + wordLength < board[0].length && board[x][y + wordLength] != '_') return false;
             if (y - 1 > 0 && board[x][y - 1] != '_') return false;
 
 
@@ -422,11 +431,11 @@ public class CrosswordGenerator {
     }
 
 
-    public static void print(char[][] grid) {
+    public static void print(char[][] board) {
         System.out.println("Board:");
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[i].length; j++) {
-                System.out.print(grid[i][j] + " ");
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                System.out.print(board[i][j] + " ");
             }
             System.out.println();
         }
@@ -448,5 +457,15 @@ public class CrosswordGenerator {
             }
             return w2.word.length() - w1.word.length();
         }
+    }
+
+    public static String[] removeWordsWithoutNeighbours(String[] words, Map<String, Set<String>> neighbours) {
+        Set<String> wordsWithNeighbours = new HashSet<String>();
+        for (String word : words) {
+            if (neighbours.get(word).size() > 0) {
+                wordsWithNeighbours.add(word);
+            }
+        }
+        return wordsWithNeighbours.toArray(new String[wordsWithNeighbours.size()]);
     }
 }
