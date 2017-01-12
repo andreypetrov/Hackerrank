@@ -373,7 +373,7 @@ public class CrosswordGenerator {
 
             for (int i = 0; i < wordLength; i++) {
                 int currentX = x + i;
-                if (currentX == intersectionWithPreviousWordX) continue; //no need to check the intersected letter
+                    if (currentX == intersectionWithPreviousWordX) continue; //no need to check the intersected letter
 
                 char currentLetter = word.charAt(i);
                 int target = board[currentX][y];
