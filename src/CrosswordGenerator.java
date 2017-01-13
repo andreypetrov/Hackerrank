@@ -206,7 +206,7 @@ public class CrosswordGenerator {
                                         crossingY,
                                         board);
 
-                                if (candidateBoardScore >= 0) {
+                                if (candidateBoardScore >= 0) { //the candidate is good, so let's place it and explore the option further
 
                                     useWord(candidateWord, candidateX, candidateY, candidateDirection, board);
 
