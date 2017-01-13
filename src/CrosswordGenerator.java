@@ -20,11 +20,16 @@ public class CrosswordGenerator {
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough"};
 
-   */ public static String[] words = {"hello", "world", "task", "korea",
+   */
+
+    public static String[] words = {"hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough",
             "ta", "tb", "tc", "td", "te", "tf", "tg", "th", "ti", "tj", "tk", "tl", "tm", "tn",
             "to", "tp"};
+
+
+
 
     public static Map<Character, Set<String>> letterCounts;
     public static Map<String, Set<String>> neighbours;
@@ -62,8 +67,10 @@ public class CrosswordGenerator {
         }
     }
 
-    //assuming no word repetitions
-    //create several crosswords and choose the best. best means with max words from the original list
+    /**
+     * Assuming no word repetitions
+     * create several crosswords and choose the best. best means with max words from the original list
+     */
     public static void generateCrossword() {
         print(words);
         letterCounts = countLetters(words);
@@ -88,8 +95,10 @@ public class CrosswordGenerator {
         for (String word : words) {
             generateBoardStartingFromWord(word, firstWordX, firstWordY, board);
         }
+        printResults();
+    }
 
-
+    public static void printResults() {
         /*for (char[][] aBestBoard : bestBoards) {
             printMinimalBoard(aBestBoard);
         }*/
@@ -98,13 +107,13 @@ public class CrosswordGenerator {
         long endTime = System.currentTimeMillis();
         long duration = (endTime - startTimeTotal) / 1000;
         System.out.println("Time taken: " + duration + " seconds");
-
         System.out.println("end");
         System.out.println("generateNextBoardInvocationsCount: " + generateNextBoardInvocationsCount);
         System.out.println("bestBoardScore: " + bestBoardScore);
         System.out.println("bestBoardWordSize: " + bestBoardWordSize);
         System.out.println("bestBoard count: " + bestBoards.size());
     }
+
 
 
     public static final void generateBoardStartingFromWord(String word, int firstWordX, int firstWordY, char[][] board) {
@@ -249,7 +258,7 @@ public class CrosswordGenerator {
     }
 
     /**
-     * Remove a word from board
+     * Remove a word from board (unroll the useWord action)
      * @param word
      * @param x
      * @param y
