@@ -4,27 +4,27 @@ import java.util.*;
  * Created by Andrey Petrov on 17-01-10.
  */
 public class CrosswordGenerator {
-    public static String[] words = {"the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
-
-    /*public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming"};
+   /*public static String[] words = {"the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
+*/
+   /* public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming"};
 
 
   /*  public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
 
-  /* public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
+   public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "completely", "numb", "and", "then", "some", "more", "it", "is", "never", "enough"};
 
-  /*  public static String[] words = {"ttttttttttto", "hello", "world", "task", "korea",
+    public static String[] words = {"ttttttttttto", "hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough"};
 
-    /*public static String[] words = {"hello", "world", "task", "korea",
+   */ public static String[] words = {"hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough",
             "ta", "tb", "tc", "td", "te", "tf", "tg", "th", "ti", "tj", "tk", "tl", "tm", "tn",
-            "to", "tp"};*/
+            "to", "tp"};
 
     public static Map<Character, Set<String>> letterCounts;
     public static Map<String, Set<String>> neighbours;
@@ -43,7 +43,7 @@ public class CrosswordGenerator {
     public static long startTimeTotal = 0;
     public static long startTimePerBoard = 0;
 
-    public static final long TIME_LIMIT_IN_SECONDS_TOTAL = 3 * 1000;
+    public static final long TIME_LIMIT_IN_SECONDS_TOTAL = 10 * 1000;
     public static final long TIME_LIMIT_IN_SECONDS_PER_BOARD = 1 * 1000;
     public static final int BOARD_SIZE = 50;
     public static long generateNextBoardInvocationsCount = 0;
@@ -108,7 +108,7 @@ public class CrosswordGenerator {
 
 
     public static final void generateBoardStartingFromWord(String word, int firstWordX, int firstWordY, char[][] board) {
-        use(word, firstWordX, firstWordY, initialDirection, board, null);
+        useWord(word, firstWordX, firstWordY, initialDirection, board, null);
 
         bestBoards.add(board);
         startTimePerBoard = System.currentTimeMillis();
@@ -119,7 +119,7 @@ public class CrosswordGenerator {
         generateNextBoard(word, firstWordX, firstWordY, opposite(initialDirection), board, initialBoardWordSize, initialBoardScore, xUsedWords, yUsedWords, directionUsedWords, wordsLeft);
 
         //reset after
-        unuse(word, firstWordX, firstWordY, initialDirection, board, null);
+        unuseWord(word, firstWordX, firstWordY, initialDirection, board, null);
     }
 
 
@@ -150,21 +150,9 @@ public class CrosswordGenerator {
                                          int wordsLeft) {
 
         generateNextBoardInvocationsCount++;
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - startTimePerBoard >= TIME_LIMIT_IN_SECONDS_PER_BOARD)
-            return; //kill execution if time limit is reached
-        if (currentTime - startTimeTotal >= TIME_LIMIT_IN_SECONDS_TOTAL) return;
-        //bottom of recursion
-        if (wordsLeft == 0) return;
-        //we will not find a better solution down this path
-        if (wordsLeft + boardWordSize <= bestBoardWordSize) return;
-        //this is a global maximum so stop searching for better solutions (here better means with more words, not with more crossings)
-        if (bestBoardWordSize == words.length) return;
+        if (shouldTerminate(wordsLeft, boardWordSize)) return;
 
-        Set<String> previousWordNeighbours = new HashSet<String>();
-        previousWordNeighbours.addAll(neighbours.get(previousWord));
-
-        for (String candidateWord : previousWordNeighbours) { //iterate first by candidate words
+        for (String candidateWord : neighbours.get(previousWord)) { //iterate first by candidate words
             if (!used.get(candidateWord)) {
                 for (int i = 0; i < previousWord.length(); i++) { //iterate over previous word letters and check which letter the two words can be crossed on
                     char crossLetter = previousWord.charAt(i);
@@ -191,12 +179,13 @@ public class CrosswordGenerator {
                                         board);
 
                                 if (candidateBoardScore >= 0) {
-                                    use(candidateWord, candidateX, candidateY, candidateDirection, board, previousWord);
+
+                                    useWord(candidateWord, candidateX, candidateY, candidateDirection, board, previousWord);
 
                                     int newBoardWordSize = boardWordSize + 1;
                                     int newBoardScore = boardScore + candidateBoardScore;
-
                                     keepBoardIfGood(board, newBoardWordSize, newBoardScore);
+
                                     if (bestBoardWordSize == words.length) return; //this is a global maximum
 
                                     //Drill down into all possible already added words
@@ -210,7 +199,7 @@ public class CrosswordGenerator {
                                     }
 
                                     //reset the board and everything when backtracking.
-                                    unuse(candidateWord, candidateX, candidateY, candidateDirection, board, previousWord);
+                                    unuseWord(candidateWord, candidateX, candidateY, candidateDirection, board, previousWord);
 
                                 }
                             }
@@ -221,24 +210,58 @@ public class CrosswordGenerator {
         }
     }
 
+    /**
+     * Check whether the backtracking have reached a terminal condition, i.e. bottom of recursion
+     * @param wordsUnusedCount
+     * @param wordsUsedCount
+     * @return
+     */
+    private static boolean shouldTerminate(int wordsUnusedCount, int wordsUsedCount) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - startTimePerBoard >= TIME_LIMIT_IN_SECONDS_PER_BOARD)
+            return true; //kill execution if time limit is reached
+        if (currentTime - startTimeTotal >= TIME_LIMIT_IN_SECONDS_TOTAL) return true;
+        //bottom of recursion
+        if (wordsUnusedCount == 0) return true;
+        //we will not find a better solution down this path
+        if (wordsUnusedCount + wordsUsedCount <= bestBoardWordSize) return true;
+        //this is a global maximum so stop searching for better solutions (here better means with more words, not with more crossings)
+        if (bestBoardWordSize == words.length) return true;
+
+        return false;
+    }
 
 
-    public static void use(String word, int x, int y, Direction direction, char[][] board, String previousWord) {
+    /**
+     * Add a word to board
+     * @param word
+     * @param x
+     * @param y
+     * @param direction
+     * @param board
+     * @param previousWord
+     */
+    public static void useWord(String word, int x, int y, Direction direction, char[][] board, String previousWord) {
         used.put(word, true);
         xUsedWords.put(word, x);
         yUsedWords.put(word, y);
         directionUsedWords.put(word, direction);
         writeWordToBoard(word, x, y, direction, board);
-        if (previousWord != null) neighbours.get(previousWord).remove(word);
     }
 
-    public static void unuse(String word, int x, int y, Direction direction, char[][] board, String previousWord) {
+    /**
+     * Remove a word from board
+     * @param word
+     * @param x
+     * @param y
+     * @param direction
+     * @param board
+     * @param previousWord
+     */
+    public static void unuseWord(String word, int x, int y, Direction direction, char[][] board, String previousWord) {
+        //We care about word coordinates and direction only if they are in the used map, so no need to modify the other maps - xUsedWords, yUsedWords, and directionUsedWords;
         used.put(word, false);
-        xUsedWords.remove(word);
-        yUsedWords.remove(word);
-        directionUsedWords.put(word, direction);
         unwriteWordFromBoard(word, x, y, direction, board);
-        if (previousWord != null) neighbours.get(previousWord).add(word);
     }
 
 
@@ -503,7 +526,7 @@ public class CrosswordGenerator {
         }
     }
 
-    //later optimize to use same board
+    //later optimize to useWord same board
     public static char[][] copyBoard(char[][] board) {
         char[][] newBoard = new char[board.length][board[0].length];
         for (int i = 0; i < board.length; i++) {
