@@ -108,7 +108,7 @@ public class CrosswordGenerator {
 
 
     public static final void generateBoardStartingFromWord(String word, int firstWordX, int firstWordY, char[][] board) {
-        useWord(word, firstWordX, firstWordY, initialDirection, board, null);
+        useWord(word, firstWordX, firstWordY, initialDirection, board);
 
         bestBoards.add(board);
         startTimePerBoard = System.currentTimeMillis();
@@ -126,7 +126,7 @@ public class CrosswordGenerator {
 
 
     /**
-     * Generate the next board. Try attaching all words to the previous one.
+     * Generate the next board. Try attaching a new word to one of the previous ones.
      * Optimized to return earlier, if no better word count can be achieved.
      * If we remove the several early returns, then we can play for score based on crossings
      *
@@ -135,22 +135,22 @@ public class CrosswordGenerator {
      * @param previousWord
      * @param candidateDirection
      * @param board
-     * @param boardWordSize
+     * @param wordsUsedCount
      */
     public static void generateNextBoard(String previousWord,
                                          int xPreviousWord,
                                          int yPreviousWord,
                                          Direction candidateDirection,
                                          char[][] board,
-                                         int boardWordSize,
+                                         int wordsUsedCount,
                                          int boardScore,
                                          Map<String, Integer> xUsedWords,
                                          Map<String, Integer> yUsedWords,
                                          Map<String, Direction> directionUsedWords,
-                                         int wordsLeft) {
+                                         int wordsLeftCount) {
 
         generateNextBoardInvocationsCount++;
-        if (shouldTerminate(wordsLeft, boardWordSize)) return;
+        if (shouldTerminate(wordsLeftCount, wordsUsedCount)) return;
 
         for (String candidateWord : neighbours.get(previousWord)) { //iterate first by candidate words
             if (!used.get(candidateWord)) {
@@ -180,9 +180,9 @@ public class CrosswordGenerator {
 
                                 if (candidateBoardScore >= 0) {
 
-                                    useWord(candidateWord, candidateX, candidateY, candidateDirection, board, previousWord);
+                                    useWord(candidateWord, candidateX, candidateY, candidateDirection, board);
 
-                                    int newBoardWordSize = boardWordSize + 1;
+                                    int newBoardWordSize = wordsUsedCount + 1;
                                     int newBoardScore = boardScore + candidateBoardScore;
                                     keepBoardIfGood(board, newBoardWordSize, newBoardScore);
 
@@ -194,7 +194,7 @@ public class CrosswordGenerator {
                                             Direction nextDirection = opposite(directionUsedWords.get(word));
                                             int nextX = xUsedWords.get(word);
                                             int nextY = yUsedWords.get(word);
-                                            generateNextBoard(word, nextX, nextY, nextDirection, board, newBoardWordSize, newBoardScore, xUsedWords, yUsedWords, directionUsedWords, wordsLeft - 1); //after going deep add the word back in
+                                            generateNextBoard(word, nextX, nextY, nextDirection, board, newBoardWordSize, newBoardScore, xUsedWords, yUsedWords, directionUsedWords, wordsLeftCount - 1); //after going deep add the word back in
                                         }
                                     }
 
@@ -212,19 +212,19 @@ public class CrosswordGenerator {
 
     /**
      * Check whether the backtracking have reached a terminal condition, i.e. bottom of recursion
-     * @param wordsUnusedCount
+     * @param wordsLeftCount
      * @param wordsUsedCount
      * @return
      */
-    private static boolean shouldTerminate(int wordsUnusedCount, int wordsUsedCount) {
+    private static boolean shouldTerminate(int wordsLeftCount, int wordsUsedCount) {
         long currentTime = System.currentTimeMillis();
         if (currentTime - startTimePerBoard >= TIME_LIMIT_IN_SECONDS_PER_BOARD)
             return true; //kill execution if time limit is reached
         if (currentTime - startTimeTotal >= TIME_LIMIT_IN_SECONDS_TOTAL) return true;
         //bottom of recursion
-        if (wordsUnusedCount == 0) return true;
+        if (wordsLeftCount == 0) return true;
         //we will not find a better solution down this path
-        if (wordsUnusedCount + wordsUsedCount <= bestBoardWordSize) return true;
+        if (wordsLeftCount + wordsUsedCount <= bestBoardWordSize) return true;
         //this is a global maximum so stop searching for better solutions (here better means with more words, not with more crossings)
         if (bestBoardWordSize == words.length) return true;
 
@@ -239,9 +239,8 @@ public class CrosswordGenerator {
      * @param y
      * @param direction
      * @param board
-     * @param previousWord
      */
-    public static void useWord(String word, int x, int y, Direction direction, char[][] board, String previousWord) {
+    public static void useWord(String word, int x, int y, Direction direction, char[][] board) {
         used.put(word, true);
         xUsedWords.put(word, x);
         yUsedWords.put(word, y);
@@ -267,7 +266,7 @@ public class CrosswordGenerator {
 
 
     /**
-     * If the board is the best we have found until now, then keep a copy of it
+     * If the board is the best we have found until now (or one of the best), then keep a copy of it
      * @param board
      * @param boardWordSize
      * @param boardScore
