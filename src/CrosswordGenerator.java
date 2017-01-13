@@ -56,20 +56,9 @@ public class CrosswordGenerator {
         }
     }
 
-    /*public static class Word {
-        public int x;
-        public int y;
-        public Direction direction;
-        public String word;
-        public Set<String> neighbours;
-
-    }*/
-
-
     //assuming no word repetitions
     //create several crosswords and choose the best. best means with max words from the original list
     public static void generateCrossword() {
-        Arrays.sort(words, new StringLengthDescendingComparator());
         print(words);
         letterCounts = countLetters(words);
         neighbours = findNeighbours(letterCounts, words);
@@ -77,14 +66,6 @@ public class CrosswordGenerator {
         Arrays.sort(words, new StringLengthDescendingComparator());
         print(words);
         printLetterCounts(letterCounts);
-
-
-        //print(neighbours);
-
-        //    List<Word> wordsList = generateWordsList(words, neighbours);
-        //    Collections.sort(wordsList, new WordNeighboursAndLengthDescendingComparator());
-        //    print(wordsList);
-
 
         int firstWordX = BOARD_SIZE / 2;
         int firstWordY = BOARD_SIZE / 2;
@@ -97,9 +78,8 @@ public class CrosswordGenerator {
 
         startTimeTotal = System.currentTimeMillis();
         for (String word : words) {
-            generateBoardStartingFromWord(words[0], firstWordX, firstWordY, board);
+            generateBoardStartingFromWord(word, firstWordX, firstWordY, board);
         }
-
 
 
         /*for (char[][] aBestBoard : bestBoards) {
@@ -196,14 +176,9 @@ public class CrosswordGenerator {
             return; //this is a global maximum so stop searching for better solutions (here better means with more words, not with more crossings)
 
 
-        //Set<String> unusedWordsCopy = new HashSet<String>();
-        //unusedWordsCopy.addAll(unusedWords);
-
-
-        //for (String previousWord : usedWords) {
         Set<String> previousWordNeighbours = new HashSet<String>();
         previousWordNeighbours.addAll(neighbours.get(previousWord));
-        //Iterator<String> iterator = neighbours.get(previousWord).iterator();
+
         for (String candidateWord : previousWordNeighbours) { //iterate first by candidate words
             if (unusedWords.contains(candidateWord)) {
                 for (int i = 0; i < previousWord.length(); i++) { //iterate over previous word letters and check which letter the two words can be crossed on
@@ -286,15 +261,11 @@ public class CrosswordGenerator {
                                     directionUsedWords.remove(candidateWord);
 
                                 }
-
                             }
                         }
                     }
                 }
-
-
             }
-            // }
         }
     }
 
@@ -430,33 +401,6 @@ public class CrosswordGenerator {
     }
 
 
-    private static void print(Set<String> neighbours) {
-        for (String neighbour : neighbours) {
-            System.out.print(neighbour + ", ");
-        }
-        System.out.println();
-    }
-
-    /*private static void print(List<Word> wordsList) {
-        for (Word word : wordsList) {
-            System.out.print(word.word + ": ");
-            print(word.neighbours);
-        }
-        System.out.println();
-    }*/
-
-
-    /*private static List<Word> generateWordsList(String[] words, Map<String, Set<String>> neighbours) {
-        List<Word> result = new ArrayList<Word>();
-        for (String wordString : words) {
-            Word word = new Word();
-            word.word = wordString;
-            word.neighbours = neighbours.get(wordString);
-            result.add(word);
-        }
-        return result;
-    }*/
-
     public static Map<String, Set<String>> findNeighbours(Map<Character, Set<String>> letterCounts, String[] words) {
 
         Map<String, Set<String>> neighbours = new HashMap<String, Set<String>>();
@@ -501,23 +445,12 @@ public class CrosswordGenerator {
         }
     }
 
-    public static void print(Map<String, Set<String>> input) {
-        for (Map.Entry<String, Set<String>> entry : input.entrySet()) {
-            System.out.print(entry.getKey() + ": ");
-            for (String word : entry.getValue()) {
-                System.out.print(word + ", ");
-            }
-            System.out.println();
-        }
-    }
-
     public static void print(String[] words) {
         for (String word : words) {
             System.out.print(word + ", ");
         }
         System.out.println();
     }
-
 
     public static char[][] initBoard() {
         char[][] grid = new char[BOARD_SIZE][BOARD_SIZE];
@@ -529,7 +462,6 @@ public class CrosswordGenerator {
         }
         return grid;
     }
-
 
     public static void printMinimalBoard(char[][] board) {
         int startX = BOARD_SIZE;
@@ -572,17 +504,6 @@ public class CrosswordGenerator {
             return s2.length() - s1.length();
         }
     }
-
-
-    /*public static class WordNeighboursAndLengthDescendingComparator implements java.util.Comparator<Word> {
-        public int compare(Word w1, Word w2) { //sort first by neighbours, next by length
-            int neighboursDistance = w2.neighbours.size() - w1.neighbours.size();
-            if (neighboursDistance != 0) {
-                return neighboursDistance;
-            }
-            return w2.word.length() - w1.word.length();
-        }
-    }*/
 
     public static String[] removeWordsWithoutNeighbours(String[] words, Map<String, Set<String>> neighbours) {
         Set<String> wordsWithNeighbours = new HashSet<String>();
