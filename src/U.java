@@ -73,4 +73,12 @@ public class U {
     }
 
 
+    public static void print(Integer[] input) {
+        System.out.print("[");
+        for (Integer i:input) {
+            System.out.print(i + ", ");
+        }
+        System.out.println("]");
+
+    }
 }
