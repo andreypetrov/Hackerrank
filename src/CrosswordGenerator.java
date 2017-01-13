@@ -6,13 +6,13 @@ import java.util.*;
 public class CrosswordGenerator {
    /*public static String[] words = {"the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
 */
-   /* public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming"};
+   public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming"};
 
 
   /*  public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
 */
-   public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
+  /* public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "completely", "numb", "and", "then", "some", "more", "it", "is", "never", "enough"};
 
@@ -61,8 +61,8 @@ public class CrosswordGenerator {
     public static long startTimeTotal = 0;
     public static long startTimePerBoard = 0;
 
-    public static final long TIME_LIMIT_IN_SECONDS_TOTAL = 2 * 1000;
-    public static final long TIME_LIMIT_IN_SECONDS_PER_BOARD = 1 * 1000;
+    public static final long TIME_LIMIT_IN_SECONDS_TOTAL = 15 * 1000;
+    public static final long TIME_LIMIT_IN_SECONDS_PER_BOARD = 15 * 1000;
     public static final int BOARD_SIZE = 50;
     public static long generateNextBoardInvocationsCount = 0;
     public static final Direction initialDirection = Direction.HORIZONTAL;
@@ -95,7 +95,7 @@ public class CrosswordGenerator {
         print(words);
         printLetterCounts(letterCounts);
 
-        //start in the middle of the board so that we can expand in any direction we need 
+        //start in the middle of the board so that we can expand in any direction we need
         int firstWordX = BOARD_SIZE / 2;
         int firstWordY = BOARD_SIZE / 2;
 
@@ -214,7 +214,7 @@ public class CrosswordGenerator {
                                     int newBoardScore = boardScore + candidateBoardScore;
                                     keepBoardIfGood(board, newBoardWordSize, newBoardScore);
 
-                                    if (bestBoardWordSize == words.length) return; //this is a global maximum
+                                    if (bestBoardWordSize == words.length) return; //this is a global maximum, so cut earlier to prune
 
                                     //Drill down into all possible already added words
                                     for (String word : words) {
