@@ -190,7 +190,7 @@ public class CrosswordGenerator {
                         int crossingX = candidateDirection == Direction.HORIZONTAL ? previousWordData.startX + i : previousWordData.startX;
                         int crossingY = candidateDirection == Direction.HORIZONTAL ? previousWordData.startY : previousWordData.startY + i;
 
-                        //check for more than one occurrence to try all possible crossings, because the letter may repeat in the second word?
+                        //check for more than one occurrence to try all possible crossings, because the letter may repeat in the second word
                         for (int j = 0; j < candidateWord.length(); j++) { //find where is this letter in the second word.
                             char candidateCrossLetter = candidateWord.charAt(j);
 
