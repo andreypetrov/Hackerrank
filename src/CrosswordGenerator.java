@@ -11,32 +11,45 @@ public class CrosswordGenerator {
 
   /*  public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
-
+*/
    public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "completely", "numb", "and", "then", "some", "more", "it", "is", "never", "enough"};
 
-    public static String[] words = {"ttttttttttto", "hello", "world", "task", "korea",
+
+    /*public static String[] words = {"ttttttttttto", "hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough"};
 
-   */
 
-    public static String[] words = {"hello", "world", "task", "korea",
+   /* public static String[] words = {"hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough",
             "ta", "tb", "tc", "td", "te", "tf", "tg", "th", "ti", "tj", "tk", "tl", "tm", "tn",
             "to", "tp"};
+*/
 
+    public static class WordData {
+        int startX;
+        int startY;
+        Direction direction;
 
+        public WordData(int startX, int startY, Direction direction) {
+            this.startX = startX;
+            this.startY = startY;
+            this.direction = direction;
+        }
+    }
 
 
     public static Map<Character, Set<String>> letterCounts;
     public static Map<String, Set<String>> neighbours;
     public static Map<String, Boolean> used;
-    public static Map<String, Integer> xUsedWords = new HashMap<String, Integer>();
-    public static Map<String, Integer> yUsedWords = new HashMap<String, Integer>();
-    public static Map<String, Direction> directionUsedWords = new HashMap<String, Direction>();
+    public static Map<String, WordData> usedWordsData = new HashMap<String, WordData>();
+
+//    public static Map<String, Integer> xUsedWords = new HashMap<String, Integer>();
+//    public static Map<String, Integer> yUsedWords = new HashMap<String, Integer>();
+//   public static Map<String, Direction> directionUsedWords = new HashMap<String, Direction>();
 
 
     public static char[][] bestBoard;
@@ -82,6 +95,7 @@ public class CrosswordGenerator {
         print(words);
         printLetterCounts(letterCounts);
 
+        //start in the middle of the board so that we can expand in any direction we need 
         int firstWordX = BOARD_SIZE / 2;
         int firstWordY = BOARD_SIZE / 2;
 
@@ -132,7 +146,9 @@ public class CrosswordGenerator {
         int initialBoardScore = 0;
         int wordsLeft = words.length - 1;
 
-        generateNextBoard(word, firstWordX, firstWordY, opposite(initialDirection), board, initialBoardWordSize, initialBoardScore, xUsedWords, yUsedWords, directionUsedWords, wordsLeft);
+
+        WordData wordData = new WordData(firstWordX, firstWordY, initialDirection);
+        generateNextBoard(word, wordData, board, initialBoardWordSize, initialBoardScore, wordsLeft);
 
         //reset after
         unuseWord(word, firstWordX, firstWordY, initialDirection, board, null);
@@ -146,24 +162,21 @@ public class CrosswordGenerator {
      * Optimized to return earlier, if no better word count can be achieved.
      * If we remove the several early returns, then we can play for score based on crossings
      *
-     * @param xPreviousWord
-     * @param yPreviousWord
      * @param previousWord
-     * @param candidateDirection
+     * @param previousWordData
      * @param board
      * @param wordsUsedCount
+     * @param boardScore
+     * @param wordsLeftCount
      */
     public static void generateNextBoard(String previousWord,
-                                         int xPreviousWord,
-                                         int yPreviousWord,
-                                         Direction candidateDirection,
+                                         WordData previousWordData,
                                          char[][] board,
                                          int wordsUsedCount,
                                          int boardScore,
-                                         Map<String, Integer> xUsedWords,
-                                         Map<String, Integer> yUsedWords,
-                                         Map<String, Direction> directionUsedWords,
                                          int wordsLeftCount) {
+
+        Direction candidateDirection = opposite(previousWordData.direction);
 
         generateNextBoardInvocationsCount++;
         if (shouldTerminate(wordsLeftCount, wordsUsedCount)) return;
@@ -174,16 +187,16 @@ public class CrosswordGenerator {
                     char crossLetter = previousWord.charAt(i);
                     if (letterCounts.get(crossLetter).contains(candidateWord)) { //found a matching letter between the two words.
 
-                        int crossingX = candidateDirection == Direction.HORIZONTAL ? xPreviousWord + i : xPreviousWord;
-                        int crossingY = candidateDirection == Direction.HORIZONTAL ? yPreviousWord : yPreviousWord + i;
+                        int crossingX = candidateDirection == Direction.HORIZONTAL ? previousWordData.startX + i : previousWordData.startX;
+                        int crossingY = candidateDirection == Direction.HORIZONTAL ? previousWordData.startY : previousWordData.startY + i;
 
                         //check for more than one occurrence to try all possible crossings, because the letter may repeat in the second word?
                         for (int j = 0; j < candidateWord.length(); j++) { //find where is this letter in the second word.
                             char candidateCrossLetter = candidateWord.charAt(j);
 
                             if (crossLetter == candidateCrossLetter) { //try solution, we found the indexes of the crossing
-                                int candidateX = candidateDirection == Direction.HORIZONTAL ? xPreviousWord + i : xPreviousWord - j; //shift starting x
-                                int candidateY = candidateDirection == Direction.HORIZONTAL ? yPreviousWord - j : yPreviousWord + i; //shift starting y
+                                int candidateX = candidateDirection == Direction.HORIZONTAL ? previousWordData.startX + i : previousWordData.startX - j; //shift starting x
+                                int candidateY = candidateDirection == Direction.HORIZONTAL ? previousWordData.startY - j : previousWordData.startY + i; //shift starting y
 
                                 int candidateBoardScore = calculateCandidateBoardScore(candidateWord,
                                         candidateX,
@@ -206,10 +219,8 @@ public class CrosswordGenerator {
                                     //Drill down into all possible already added words
                                     for (String word : words) {
                                         if (used.get(word)) {
-                                            Direction nextDirection = opposite(directionUsedWords.get(word));
-                                            int nextX = xUsedWords.get(word);
-                                            int nextY = yUsedWords.get(word);
-                                            generateNextBoard(word, nextX, nextY, nextDirection, board, newBoardWordSize, newBoardScore, xUsedWords, yUsedWords, directionUsedWords, wordsLeftCount - 1); //after going deep add the word back in
+                                            WordData wordData = usedWordsData.get(word);
+                                            generateNextBoard(word, wordData, board, newBoardWordSize, newBoardScore, wordsLeftCount - 1); //after going deep add the word back in
                                         }
                                     }
 
@@ -257,9 +268,8 @@ public class CrosswordGenerator {
      */
     public static void useWord(String word, int x, int y, Direction direction, char[][] board) {
         used.put(word, true);
-        xUsedWords.put(word, x);
-        yUsedWords.put(word, y);
-        directionUsedWords.put(word, direction);
+        WordData wordData = new WordData(x, y, direction);
+        usedWordsData.put(word, wordData);
         writeWordToBoard(word, x, y, direction, board);
     }
 
