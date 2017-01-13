@@ -48,7 +48,7 @@ public class CrosswordGenerator {
     public static long startTimeTotal = 0;
     public static long startTimePerBoard = 0;
 
-    public static final long TIME_LIMIT_IN_SECONDS_TOTAL = 10 * 1000;
+    public static final long TIME_LIMIT_IN_SECONDS_TOTAL = 2 * 1000;
     public static final long TIME_LIMIT_IN_SECONDS_PER_BOARD = 1 * 1000;
     public static final int BOARD_SIZE = 50;
     public static long generateNextBoardInvocationsCount = 0;
@@ -95,6 +95,7 @@ public class CrosswordGenerator {
         for (String word : words) {
             generateBoardStartingFromWord(word, firstWordX, firstWordY, board);
         }
+
         printResults();
     }
 
@@ -115,7 +116,13 @@ public class CrosswordGenerator {
     }
 
 
-
+    /**
+     * Create a new board starting with the given word
+     * @param word
+     * @param firstWordX
+     * @param firstWordY
+     * @param board
+     */
     public static final void generateBoardStartingFromWord(String word, int firstWordX, int firstWordY, char[][] board) {
         useWord(word, firstWordX, firstWordY, initialDirection, board);
 
@@ -167,13 +174,12 @@ public class CrosswordGenerator {
                     char crossLetter = previousWord.charAt(i);
                     if (letterCounts.get(crossLetter).contains(candidateWord)) { //found a matching letter between the two words.
 
-                        // TODO check for more than one occurrence to try all possible crossings, because the letter may repeat in the second word?
+                        int crossingX = candidateDirection == Direction.HORIZONTAL ? xPreviousWord + i : xPreviousWord;
+                        int crossingY = candidateDirection == Direction.HORIZONTAL ? yPreviousWord : yPreviousWord + i;
+
+                        //check for more than one occurrence to try all possible crossings, because the letter may repeat in the second word?
                         for (int j = 0; j < candidateWord.length(); j++) { //find where is this letter in the second word.
                             char candidateCrossLetter = candidateWord.charAt(j);
-
-                            int crossingX = candidateDirection == Direction.HORIZONTAL ? xPreviousWord + i : xPreviousWord;
-                            int crossingY = candidateDirection == Direction.HORIZONTAL ? yPreviousWord : yPreviousWord + i;
-
 
                             if (crossLetter == candidateCrossLetter) { //try solution, we found the indexes of the crossing
                                 int candidateX = candidateDirection == Direction.HORIZONTAL ? xPreviousWord + i : xPreviousWord - j; //shift starting x
