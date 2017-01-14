@@ -9,25 +9,25 @@ public class CrosswordGenerator {
    public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming"};
 
 
-  /*  public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
+  /* public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog"};
-*/
+
   /* public static String[] words = {"hello", "world", "madbid", "interesting", "task", "korea", "programming",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "completely", "numb", "and", "then", "some", "more", "it", "is", "never", "enough"};
 
-
-    /*public static String[] words = {"ttttttttttto", "hello", "world", "task", "korea",
+*/
+   /* public static String[] words = {"ttttttttttto", "hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough"};
 
-
-   /* public static String[] words = {"hello", "world", "task", "korea",
+/*
+    public static String[] words = {"hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough",
             "ta", "tb", "tc", "td", "te", "tf", "tg", "th", "ti", "tj", "tk", "tl", "tm", "tn",
-            "to", "tp"};
-*/
+            "to", "tp"};*/
+
 
     public static class WordData {
         int r;
@@ -56,9 +56,9 @@ public class CrosswordGenerator {
     public static long startTimeTotal = 0;
     public static long startTimePerBoard = 0;
 
-    public static final long TIME_LIMIT_IN_SECONDS_TOTAL = 15 * 1000;
-    public static final long TIME_LIMIT_IN_SECONDS_PER_BOARD = 15 * 1000;
-    public static final int BOARD_SIZE = 50;
+    public static final long TIME_LIMIT_IN_SECONDS_TOTAL = 3 * 1000;
+    public static final long TIME_LIMIT_IN_SECONDS_PER_BOARD = 3 * 1000;
+    public static final int BOARD_SIZE = 100;
     public static long generateNextBoardInvocationsCount = 0;
     public static final Direction initialDirection = Direction.HORIZONTAL;
 
@@ -361,7 +361,7 @@ public class CrosswordGenerator {
                                                    int intersectionWithPreviousWordR,
                                                    int intersectionWithPreviousWordC,
                                                    char[][] board) {
-        if (r < 0 || c < 0 || r > board.length || c > board[0].length) return -1;
+        if (r < 0 || c < 0 || r >= board.length || c >= board[0].length) return -1;
 
 
         int score = 0; //default score is 1 if there are no crossings with other words besides the previous one
@@ -371,8 +371,8 @@ public class CrosswordGenerator {
 
 
             //check whether the element before first letter and element after last letter are free. Words should not touch others
-            if (r + wordLength < board.length && board[r + wordLength][c] != '_') return -1;
-            if (r - 1 > 0 && board[r - 1][c] != '_') return -1;
+                if (r + wordLength < board.length && board[r + wordLength][c] != '_') return -1;
+                if (r - 1 > 0 && board[r - 1][c] != '_') return -1;
 
 
             for (int i = 0; i < wordLength; i++) {
