@@ -71,6 +71,7 @@ public class CrosswordGenerator {
         HORIZONTAL(0, 1),
         VERTICAL(1, 0);
 
+        //vector of movement
         int dx;
         int dy;
 
@@ -367,6 +368,7 @@ public class CrosswordGenerator {
                                                    char[][] board) {
         if (x < 0 || y < 0 || x > board.length || y > board[0].length) return -1;
 
+
         int score = 0; //default score is 1 if there are no crossings with other words besides the previous one
         int wordLength = word.length();
         if (direction == Direction.VERTICAL) {
@@ -542,8 +544,8 @@ public class CrosswordGenerator {
 
     public static void printBoard(char[][] board) {
         System.out.println("Board:");
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[i].length; j++) {
+        for (int j = 0; j < board[0].length; j++) {
+            for (int i = 0; i < board.length; i++) {
                 System.out.print(board[i][j] + " ");
             }
             System.out.println();
