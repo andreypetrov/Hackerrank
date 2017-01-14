@@ -21,25 +21,13 @@ public class CrosswordGenerator {
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough"};
 
-/*
+
     public static String[] words = {"hello", "world", "task", "korea",
             "the", "quick", "brown", "fox", "jumped", "over", "lazy", "dog",
             "keep", "going", "until", "you", "become", "numb", "and", "then", "some", "more","it","is","never","enough",
             "ta", "tb", "tc", "td", "te", "tf", "tg", "th", "ti", "tj", "tk", "tl", "tm", "tn",
-            "to", "tp"};*/
-
-
-    public static class WordData {
-        int r;
-        int c;
-        Direction direction;
-
-        public WordData(int r, int c, Direction direction) {
-            this.r = r;
-            this.c = c;
-            this.direction = direction;
-        }
-    }
+            "to", "tp"};
+    */
 
 
     public static Map<Character, Set<String>> letterCounts;
@@ -58,9 +46,10 @@ public class CrosswordGenerator {
 
     public static final long TIME_LIMIT_IN_SECONDS_TOTAL = 3 * 1000;
     public static final long TIME_LIMIT_IN_SECONDS_PER_BOARD = 3 * 1000;
-    public static final int BOARD_SIZE = 100;
+    public static final int BOARD_SIZE = 10;
     public static long generateNextBoardInvocationsCount = 0;
     public static final Direction initialDirection = Direction.HORIZONTAL;
+
 
     public static enum Direction {
         HORIZONTAL(0, 1),
@@ -75,6 +64,20 @@ public class CrosswordGenerator {
             this.dColumn = dColumn;
         }
     }
+
+
+    public static class WordData {
+        int r;
+        int c;
+        Direction direction;
+
+        public WordData(int r, int c, Direction direction) {
+            this.r = r;
+            this.c = c;
+            this.direction = direction;
+        }
+    }
+
 
     /**
      * Assuming no word repetitions
@@ -187,8 +190,8 @@ public class CrosswordGenerator {
                     char crossLetter = previousWord.charAt(i);
                     if (letterCounts.get(crossLetter).contains(candidateWord)) { //found a matching letter between the two words.
 
-                        int crossingR = candidateDirection == Direction.HORIZONTAL ? previousWordData.r + i : previousWordData.r;
-                        int crossingC = candidateDirection == Direction.HORIZONTAL ? previousWordData.c : previousWordData.c + i;
+                        int crossingR = previousWordData.r + i*previousWordData.direction.dRow;  //candidateDirection == Direction.HORIZONTAL ? previousWordData.r + i : previousWordData.r;
+                        int crossingC = previousWordData.c + i*previousWordData.direction.dColumn; //candidateDirection == Direction.HORIZONTAL ? previousWordData.c : previousWordData.c + i;
 
                         //check for more than one occurrence to try all possible crossings, because the letter may repeat in the second word
                         for (int j = 0; j < candidateWord.length(); j++) { //find where is this letter in the second word.
@@ -196,7 +199,9 @@ public class CrosswordGenerator {
 
                             if (crossLetter == candidateCrossLetter) { //try solution, we found the indexes of the crossing
                                 int candidateR = candidateDirection == Direction.HORIZONTAL ? previousWordData.r + i : previousWordData.r - j; //shift starting x
+                                //int candidateR = previousWordData.r + i*previousWordData.direction.dRow - j*previousWordData.direction.dColumn;
                                 int candidateC = candidateDirection == Direction.HORIZONTAL ? previousWordData.c - j : previousWordData.c + i; //shift starting y
+                                //int candidateC = previousWordData.c - j*previousWordData.direction.dRow + i*previousWordData.direction.dColumn;
 
                                 WordData candidateWordData = new WordData (candidateR, candidateC, candidateDirection);
                                 int candidateBoardScore = calculateCandidateBoardScore(candidateWord, candidateWordData, crossingR, crossingC, board);
@@ -358,14 +363,17 @@ public class CrosswordGenerator {
 
         int score = 0; //default score is 1 if there are no crossings with other words besides the previous one
         int wordLength = word.length();
+
+        int verticalWordLength = wordLength*direction.dRow;
+        int horizontalWordLength = wordLength*direction.dColumn;
+        if (r + verticalWordLength> board.length) return -1; //no space to put in the word
+        if (c + horizontalWordLength > board[0].length) return -1; //no space to put in the word
+
+
         if (direction == Direction.VERTICAL) {
-            if (r + wordLength > board.length) return -1; //no space to put in the word
-
-
             //check whether the element before first letter and element after last letter are free. Words should not touch others
-                if (r + wordLength < board.length && board[r + wordLength][c] != '_') return -1;
-                if (r - 1 > 0 && board[r - 1][c] != '_') return -1;
-
+                if (r + verticalWordLength < board.length && board[r + verticalWordLength][c] != '_') return -1;
+                if (r - direction.dRow > 0 && board[r - 1][c] != '_') return -1;
 
             for (int i = 0; i < wordLength; i++) {
                 int currentR = r + i;
@@ -384,8 +392,6 @@ public class CrosswordGenerator {
                 }
             }
         } else { //direction = Direction.HORIZONTAL
-            if (c + wordLength > board[0].length) return -1; //no space to put in the word
-
             //check whether the element before first letter and element after last letter are free. Words should not touch others
             if (c + wordLength < board[0].length && board[r][c + wordLength] != '_') return -1;
             if (c - 1 > 0 && board[r][c - 1] != '_') return -1;
