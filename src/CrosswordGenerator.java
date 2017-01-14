@@ -30,13 +30,13 @@ public class CrosswordGenerator {
 */
 
     public static class WordData {
-        int startX;
-        int startY;
+        int r;
+        int c;
         Direction direction;
 
-        public WordData(int startX, int startY, Direction direction) {
-            this.startX = startX;
-            this.startY = startY;
+        public WordData(int r, int c, Direction direction) {
+            this.r = r;
+            this.c = c;
             this.direction = direction;
         }
     }
@@ -46,11 +46,6 @@ public class CrosswordGenerator {
     public static Map<String, Set<String>> neighbours;
     public static Map<String, Boolean> used;
     public static Map<String, WordData> usedWordsData = new HashMap<String, WordData>();
-
-//    public static Map<String, Integer> xUsedWords = new HashMap<String, Integer>();
-//    public static Map<String, Integer> yUsedWords = new HashMap<String, Integer>();
-//   public static Map<String, Direction> directionUsedWords = new HashMap<String, Direction>();
-
 
     public static char[][] bestBoard;
     public static List<char[][]> bestBoards;
@@ -72,12 +67,12 @@ public class CrosswordGenerator {
         VERTICAL(1, 0);
 
         //vector of movement
-        int dx;
-        int dy;
+        int dRow;
+        int dColumn;
 
-        Direction(int dx, int dy) {
-            this.dx = dx;
-            this.dy = dy;
+        Direction(int dRow, int dColumn) {
+            this.dRow = dRow;
+            this.dColumn = dColumn;
         }
     }
 
@@ -97,8 +92,8 @@ public class CrosswordGenerator {
         printLetterCounts(letterCounts);
 
         //start in the middle of the board so that we can expand in any direction we need
-        int firstWordX = BOARD_SIZE / 2;
-        int firstWordY = BOARD_SIZE / 2;
+        int firstWordR = BOARD_SIZE / 2;
+        int firstWordC = BOARD_SIZE / 2;
 
 
         char[][] board = initBoard();
@@ -108,7 +103,7 @@ public class CrosswordGenerator {
 
         startTimeTotal = System.currentTimeMillis();
         for (String word : words) {
-            generateBoardStartingFromWord(word, firstWordX, firstWordY, board);
+            generateBoardStartingFromWord(word, firstWordR, firstWordC, board);
         }
 
         printResults();
@@ -134,12 +129,12 @@ public class CrosswordGenerator {
     /**
      * Create a new board starting with the given word
      * @param word
-     * @param firstWordX
-     * @param firstWordY
+     * @param firstWordR
+     * @param firstWordC
      * @param board
      */
-    public static final void generateBoardStartingFromWord(String word, int firstWordX, int firstWordY, char[][] board) {
-        useWord(word, firstWordX, firstWordY, initialDirection, board);
+    public static final void generateBoardStartingFromWord(String word, int firstWordR, int firstWordC, char[][] board) {
+        useWord(word, firstWordR, firstWordC, initialDirection, board);
 
         bestBoards.add(board);
         startTimePerBoard = System.currentTimeMillis();
@@ -148,11 +143,11 @@ public class CrosswordGenerator {
         int wordsLeft = words.length - 1;
 
 
-        WordData wordData = new WordData(firstWordX, firstWordY, initialDirection);
+        WordData wordData = new WordData(firstWordR, firstWordC, initialDirection);
         generateNextBoard(word, wordData, board, initialBoardWordSize, initialBoardScore, wordsLeft);
 
         //reset after
-        unuseWord(word, firstWordX, firstWordY, initialDirection, board, null);
+        unuseWord(word, firstWordR, firstWordC, initialDirection, board, null);
     }
 
 
@@ -188,28 +183,28 @@ public class CrosswordGenerator {
                     char crossLetter = previousWord.charAt(i);
                     if (letterCounts.get(crossLetter).contains(candidateWord)) { //found a matching letter between the two words.
 
-                        int crossingX = candidateDirection == Direction.HORIZONTAL ? previousWordData.startX + i : previousWordData.startX;
-                        int crossingY = candidateDirection == Direction.HORIZONTAL ? previousWordData.startY : previousWordData.startY + i;
+                        int crossingR = candidateDirection == Direction.HORIZONTAL ? previousWordData.r + i : previousWordData.r;
+                        int crossingC = candidateDirection == Direction.HORIZONTAL ? previousWordData.c : previousWordData.c + i;
 
                         //check for more than one occurrence to try all possible crossings, because the letter may repeat in the second word
                         for (int j = 0; j < candidateWord.length(); j++) { //find where is this letter in the second word.
                             char candidateCrossLetter = candidateWord.charAt(j);
 
                             if (crossLetter == candidateCrossLetter) { //try solution, we found the indexes of the crossing
-                                int candidateX = candidateDirection == Direction.HORIZONTAL ? previousWordData.startX + i : previousWordData.startX - j; //shift starting x
-                                int candidateY = candidateDirection == Direction.HORIZONTAL ? previousWordData.startY - j : previousWordData.startY + i; //shift starting y
+                                int candidateR = candidateDirection == Direction.HORIZONTAL ? previousWordData.r + i : previousWordData.r - j; //shift starting x
+                                int candidateC = candidateDirection == Direction.HORIZONTAL ? previousWordData.c - j : previousWordData.c + i; //shift starting y
 
                                 int candidateBoardScore = calculateCandidateBoardScore(candidateWord,
-                                        candidateX,
-                                        candidateY,
+                                        candidateR,
+                                        candidateC,
                                         candidateDirection,
-                                        crossingX,
-                                        crossingY,
+                                        crossingR,
+                                        crossingC,
                                         board);
 
                                 if (candidateBoardScore >= 0) { //the candidate is good, so let's place it and explore the option further
 
-                                    useWord(candidateWord, candidateX, candidateY, candidateDirection, board);
+                                    useWord(candidateWord, candidateR, candidateC, candidateDirection, board);
 
                                     int newBoardWordSize = wordsUsedCount + 1;
                                     int newBoardScore = boardScore + candidateBoardScore;
@@ -226,7 +221,7 @@ public class CrosswordGenerator {
                                     }
 
                                     //reset the board and everything when backtracking.
-                                    unuseWord(candidateWord, candidateX, candidateY, candidateDirection, board, previousWord);
+                                    unuseWord(candidateWord, candidateR, candidateC, candidateDirection, board, previousWord);
 
                                 }
                             }
@@ -262,31 +257,31 @@ public class CrosswordGenerator {
     /**
      * Add a word to board
      * @param word
-     * @param x
-     * @param y
+     * @param r
+     * @param c
      * @param direction
      * @param board
      */
-    public static void useWord(String word, int x, int y, Direction direction, char[][] board) {
+    public static void useWord(String word, int r, int c, Direction direction, char[][] board) {
         used.put(word, true);
-        WordData wordData = new WordData(x, y, direction);
+        WordData wordData = new WordData(r, c, direction);
         usedWordsData.put(word, wordData);
-        writeWordToBoard(word, x, y, direction, board);
+        writeWordToBoard(word, r, c, direction, board);
     }
 
     /**
      * Remove a word from board (unroll the useWord action)
      * @param word
-     * @param x
-     * @param y
+     * @param r
+     * @param c
      * @param direction
      * @param board
      * @param previousWord
      */
-    public static void unuseWord(String word, int x, int y, Direction direction, char[][] board, String previousWord) {
+    public static void unuseWord(String word, int r, int c, Direction direction, char[][] board, String previousWord) {
         //We care about word coordinates and direction only if they are in the used map, so no need to modify the other maps - xUsedWords, yUsedWords, and directionUsedWords;
         used.put(word, false);
-        unwriteWordFromBoard(word, x, y, direction, board);
+        unwriteWordFromBoard(word, r, c, direction, board);
     }
 
 
@@ -316,79 +311,79 @@ public class CrosswordGenerator {
 
 
     /**
-     * Write the word to the board at the given x and y
+     * Write the word to the board at the given row and column
      *
      * @param word
-     * @param x
-     * @param y
+     * @param r - row
+     * @param c - column
      * @param direction
      * @param board
      */
-    public static void writeWordToBoard(String word, int x, int y, Direction direction, char[][] board) {
-        int currentX = x;
-        int currentY = y;
+    public static void writeWordToBoard(String word, int r, int c, Direction direction, char[][] board) {
+        int currentR = r;
+        int currentC = c;
         for (int i = 0; i < word.length(); i++) {
-            board[currentX][currentY] = word.charAt(i);
-            currentX += direction.dx;
-            currentY += direction.dy;
+            board[currentR][currentC] = word.charAt(i);
+            currentR += direction.dRow;
+            currentC += direction.dColumn;
         }
     }
 
-    public static void unwriteWordFromBoard(String word, int x, int y, Direction direction, char[][] board) {
-        int currentX = x;
-        int currentY = y;
+    public static void unwriteWordFromBoard(String word, int r, int c, Direction direction, char[][] board) {
+        int currentR = r;
+        int currentC = c;
         for (int i = 0; i < word.length(); i++) {
-            if (hasEmptyNeighbours(currentX, currentY, direction, board)) {
-                board[currentX][currentY] = '_';
+            if (hasEmptyNeighbours(currentR, currentC, direction, board)) {
+                board[currentR][currentC] = '_';
             }
-            currentX += direction.dx;
-            currentY += direction.dy;
+            currentR += direction.dRow;
+            currentC += direction.dColumn;
         }
     }
 
 
     /**
-     * Check whether a word can be written at starting coordinates x and y in the given direction
+     * Check whether a word can be written at starting coordinates r and c in the given direction
      *
      * @param word
-     * @param x
-     * @param y
+     * @param r
+     * @param c
      * @param direction
-     * @param intersectionWithPreviousWordX
-     * @param intersectionWithPreviousWordY
+     * @param intersectionWithPreviousWordR
+     * @param intersectionWithPreviousWordC
      * @param board
      * @return score of potential placement
      */
     public static int calculateCandidateBoardScore(String word,
-                                                   int x,
-                                                   int y,
+                                                   int r,
+                                                   int c,
                                                    Direction direction,
-                                                   int intersectionWithPreviousWordX,
-                                                   int intersectionWithPreviousWordY,
+                                                   int intersectionWithPreviousWordR,
+                                                   int intersectionWithPreviousWordC,
                                                    char[][] board) {
-        if (x < 0 || y < 0 || x > board.length || y > board[0].length) return -1;
+        if (r < 0 || c < 0 || r > board.length || c > board[0].length) return -1;
 
 
         int score = 0; //default score is 1 if there are no crossings with other words besides the previous one
         int wordLength = word.length();
         if (direction == Direction.VERTICAL) {
-            if (x + wordLength > board.length) return -1; //no space to put in the word
+            if (r + wordLength > board.length) return -1; //no space to put in the word
 
 
             //check whether the element before first letter and element after last letter are free. Words should not touch others
-            if (x + wordLength < board.length && board[x + wordLength][y] != '_') return -1;
-            if (x - 1 > 0 && board[x - 1][y] != '_') return -1;
+            if (r + wordLength < board.length && board[r + wordLength][c] != '_') return -1;
+            if (r - 1 > 0 && board[r - 1][c] != '_') return -1;
 
 
             for (int i = 0; i < wordLength; i++) {
-                int currentX = x + i;
-                if (currentX == intersectionWithPreviousWordX) continue; //no need to check the intersected letter
+                int currentR = r + i;
+                if (currentR == intersectionWithPreviousWordR) continue; //no need to check the intersected letter
 
                 char currentLetter = word.charAt(i);
-                int target = board[currentX][y];
+                int target = board[currentR][c];
 
                 if (target == '_') { //empty, so good candidate if it has valid neighbours
-                    if (!hasEmptyNeighbours(currentX, y, direction, board)) return -1;
+                    if (!hasEmptyNeighbours(currentR, c, direction, board)) return -1;
                 } else if (target != currentLetter) {
                     return -1;//letter is not matching
                 } else {// target == current
@@ -397,20 +392,20 @@ public class CrosswordGenerator {
                 }
             }
         } else { //direction = Direction.HORIZONTAL
-            if (y + wordLength > board[0].length) return -1; //no space to put in the word
+            if (c + wordLength > board[0].length) return -1; //no space to put in the word
 
             //check whether the element before first letter and element after last letter are free. Words should not touch others
-            if (y + wordLength < board[0].length && board[x][y + wordLength] != '_') return -1;
-            if (y - 1 > 0 && board[x][y - 1] != '_') return -1;
+            if (c + wordLength < board[0].length && board[r][c + wordLength] != '_') return -1;
+            if (c - 1 > 0 && board[r][c - 1] != '_') return -1;
 
 
             for (int i = 0; i < wordLength; i++) {
-                int currentY = y + i;
-                if (currentY == intersectionWithPreviousWordY) continue; //no need to check the intersected letter
+                int currentC = c + i;
+                if (currentC == intersectionWithPreviousWordC) continue; //no need to check the intersected letter
                 char currentLetter = word.charAt(i);
-                int target = board[x][currentY];
+                int target = board[r][currentC];
                 if (target == '_') { //empty, so good candidate if it has valid neighbours
-                    if (!hasEmptyNeighbours(x, currentY, direction, board)) return -1;
+                    if (!hasEmptyNeighbours(r, currentC, direction, board)) return -1;
                 } else if (target != word.charAt(i)) {
                     return -1;//letter is not matching
                 } else {
@@ -425,23 +420,23 @@ public class CrosswordGenerator {
     /**
      * Check whether the neighbours are valid. Touching another word should not happen.
      *
-     * @param x
-     * @param y
+     * @param r
+     * @param c
      * @param direction
      * @return
      */
 
-    private static boolean hasEmptyNeighbours(int x, int y, Direction direction, char[][] board) {
+    private static boolean hasEmptyNeighbours(int r, int c, Direction direction, char[][] board) {
         if (direction == Direction.HORIZONTAL) {
             //if element on top is occupied, means we are touching another word
-            if (x - 1 > 0 && board[x - 1][y] != '_') return false;
+            if (r - 1 > 0 && board[r - 1][c] != '_') return false;
             //if the element on bottom is occupied, means we are touching another word
-            if (x + 1 < board.length && board[x + 1][y] != '_') return false;
+            if (r + 1 < board.length && board[r + 1][c] != '_') return false;
         } else { //direction == Direction.VERTICAL
             //if the element on left is occupied, means we are touching another word
-            if (y - 1 > 0 && board[x][y - 1] != '_') return false;
+            if (c - 1 > 0 && board[r][c - 1] != '_') return false;
             //if the element on right is occupied, means we are touching another word
-            if (y + 1 < board[0].length && board[x][y + 1] != '_') return false;
+            if (c + 1 < board[0].length && board[r][c + 1] != '_') return false;
         }
         return true;
     }
@@ -518,25 +513,25 @@ public class CrosswordGenerator {
     }
 
     public static void printMinimalBoard(char[][] board) {
-        int startX = BOARD_SIZE;
-        int startY = BOARD_SIZE;
-        int endX = 0;
-        int endY = 0;
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[i].length; j++) {
-                if (board[i][j] != '_') {
-                    startX = Math.min(startX, i);
-                    startY = Math.min(startY, j);
-                    endX = Math.max(endX, i);
-                    endY = Math.max(endY, j);
+        int startRow = BOARD_SIZE;
+        int startColumn = BOARD_SIZE;
+        int endRow = 0;
+        int endColumn = 0;
+        for (int r = 0; r < board.length; r++) {
+            for (int c = 0; c < board[r].length; c++) {
+                if (board[r][c] != '_') {
+                    startRow = Math.min(startRow, r);
+                    startColumn = Math.min(startColumn, c);
+                    endRow = Math.max(endRow, r);
+                    endColumn = Math.max(endColumn, c);
                 }
             }
         }
 
         System.out.println("Board:");
-        for (int i = startX; i <= endX; i++) {
-            for (int j = startY; j <= endY; j++) {
-                System.out.print(board[i][j] + " ");
+        for (int r = startRow; r <= endRow; r++) {
+            for (int c = startColumn; c <= endColumn; c++) {
+                System.out.print(board[r][c] + " ");
             }
             System.out.println();
         }
@@ -544,9 +539,9 @@ public class CrosswordGenerator {
 
     public static void printBoard(char[][] board) {
         System.out.println("Board:");
-        for (int j = 0; j < board[0].length; j++) {
-            for (int i = 0; i < board.length; i++) {
-                System.out.print(board[i][j] + " ");
+        for (int r = 0; r < board.length; r++) {
+            for (int c = 0; c < board[0].length; c++) {
+                System.out.print(board[r][c] + " ");
             }
             System.out.println();
         }
@@ -555,9 +550,9 @@ public class CrosswordGenerator {
     //later optimize to useWord same board
     public static char[][] copyBoard(char[][] board) {
         char[][] newBoard = new char[board.length][board[0].length];
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[0].length; j++) {
-                newBoard[i][j] = board[i][j];
+        for (int r = 0; r < board.length; r++) { //r is row index
+            for (int c = 0; c < board[0].length; c++) { //c is column index
+                newBoard[r][c] = board[r][c];
             }
         }
         return newBoard;
